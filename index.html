@@ -262,12 +262,19 @@ const ps=Array.from({length:60},()=>({x:Math.random()*innerWidth,y:Math.random()
   requestAnimationFrame(drawP);
 })();
 
-// Autoplay audio on first interaction
-function startAudio(){audio.play().catch(()=>{});}
-document.addEventListener('click',startAudio,{once:true});
-document.addEventListener('touchstart',startAudio,{once:true});
+// Audio — siempre desde el principio, se activa en primer toque/click
+var audioStarted=false;
+function startAudio(){
+  if(audioStarted)return;
+  audio.currentTime=0;
+  audio.play().then(()=>{audioStarted=true;}).catch(()=>{});
+}
+document.addEventListener('click',startAudio);
+document.addEventListener('touchstart',startAudio);
 go(0);
-setTimeout(startAudio,300);
+// Intento de autoplay inmediato (funciona en desktop sin bloqueo)
+audio.currentTime=0;
+audio.play().then(()=>{audioStarted=true;}).catch(()=>{});
 </script>
 </body>
 </html>
