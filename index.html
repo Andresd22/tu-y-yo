@@ -49,6 +49,10 @@ html,body{width:100%;height:100%;background:#09090b;overflow:hidden;font-family:
   background-size:3px 3px,5px 5px}
 @keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.4vh)}}
+#tap-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:rgba(9,9,11,.88);cursor:pointer;user-select:none;}
+#tap-overlay .tov-heart{font-size:3.2rem;color:#c9a55c;animation:beat 1.8s ease-in-out infinite;}
+#tap-overlay .tov-text{letter-spacing:.38em;font-size:.72rem;text-transform:uppercase;color:#8c7239;}
+
 </style>
 </head>
 <body>
@@ -256,24 +260,28 @@ const ps=Array.from({length:60},()=>({x:Math.random()*innerWidth,y:Math.random()
   requestAnimationFrame(drawP);
 })();
 
-// Audio — play desde segundo 0, truco muted→unmuted para mobile autoplay
-audio.currentTime=0;
-audio.muted=true;
-audio.play().then(()=>{
-  // Autoplay muted funcionó — desmutear en primer gesto
-  function unmute(){audio.muted=false;document.removeEventListener('click',unmute);document.removeEventListener('touchstart',unmute);}
-  document.addEventListener('click',unmute,{once:true});
-  document.addEventListener('touchstart',unmute,{once:true});
-  // Si no hay gesto en 500ms, desmutear igual (desktop sin restricción)
-  setTimeout(()=>{audio.muted=false;},500);
-}).catch(()=>{
-  // Autoplay bloqueado — arrancar en primer toque con volumen
-  audio.muted=false;
-  function startAudio(){audio.currentTime=0;audio.play().catch(()=>{});document.removeEventListener('click',startAudio);document.removeEventListener('touchstart',startAudio);}
-  document.addEventListener('click',startAudio,{once:true});
-  document.addEventListener('touchstart',startAudio,{once:true});
-});
-go(0);
+// Overlay tap-to-start: garantiza audio desde segundo 0 en iOS y Android
+(function(){
+  const ov=document.getElementById('tap-overlay');
+  function startAll(e){
+    e.preventDefault();
+    audio.currentTime=0;
+    audio.volume=0.8;
+    audio.muted=false;
+    audio.play().catch(()=>{});
+    ov.style.transition='opacity .7s ease';
+    ov.style.opacity='0';
+    setTimeout(()=>{ov.style.display='none';},750);
+    go(0);
+  }
+  ov.addEventListener('click',startAll,{once:true});
+  ov.addEventListener('touchend',startAll,{once:true,passive:false});
+})();
 </script>
+<div id="tap-overlay">
+  <div class="tov-heart">&#9829;</div>
+  <div class="tov-text">Toca para comenzar</div>
+  <div class="tov-sub">y escuchar la canción</div>
+</div>
 </body>
 </html>
