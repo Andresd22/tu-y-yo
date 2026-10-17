@@ -49,7 +49,7 @@ html,body{width:100%;height:100%;background:#09090b;overflow:hidden;font-family:
   background-size:3px 3px,5px 5px}
 @keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.4vh)}}
-#tap-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:rgba(9,9,11,.88);cursor:pointer;user-select:none;}
+#tap-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:rgba(9,9,11,.88);cursor:pointer;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 #tap-overlay .tov-heart{font-size:3.2rem;color:#c9a55c;animation:beat 1.8s ease-in-out infinite;}
 #tap-overlay .tov-text{letter-spacing:.38em;font-size:.72rem;text-transform:uppercase;color:#8c7239;}
 
@@ -260,22 +260,25 @@ const ps=Array.from({length:60},()=>({x:Math.random()*innerWidth,y:Math.random()
   requestAnimationFrame(drawP);
 })();
 
-// Overlay tap-to-start: garantiza audio desde segundo 0 en iOS y Android
+// Overlay tap-to-start — iOS Safari requiere touchstart sincrono
 (function(){
   const ov=document.getElementById('tap-overlay');
-  function startAll(e){
-    e.preventDefault();
+  let started=false;
+  function startAll(){
+    if(started)return;
+    started=true;
     audio.currentTime=0;
     audio.volume=0.8;
     audio.muted=false;
-    audio.play().catch(()=>{});
+    const p=audio.play();
+    if(p!==undefined){p.catch(function(){setTimeout(function(){audio.play().catch(function(){});},80);});}
     ov.style.transition='opacity .7s ease';
     ov.style.opacity='0';
-    setTimeout(()=>{ov.style.display='none';},750);
+    setTimeout(function(){ov.style.display='none';},750);
     go(0);
   }
-  ov.addEventListener('click',startAll,{once:true});
-  ov.addEventListener('touchend',startAll,{once:true,passive:false});
+  ov.addEventListener('touchstart',startAll,{passive:true});
+  ov.addEventListener('click',startAll);
 })();
 </script>
 <div id="tap-overlay">
