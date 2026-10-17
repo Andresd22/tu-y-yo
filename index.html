@@ -260,26 +260,32 @@ const ps=Array.from({length:60},()=>({x:Math.random()*innerWidth,y:Math.random()
   requestAnimationFrame(drawP);
 })();
 
-// Overlay tap-to-start — iOS Safari requiere touchstart sincrono
-(function(){
-  const ov=document.getElementById('tap-overlay');
-  let started=false;
-  function startAll(){
-    if(started)return;
-    started=true;
+// Overlay tap-to-start — escuchar en document para maxima compatibilidad iOS
+var _tapDone=false;
+function _doStart(){
+  if(_tapDone)return;
+  _tapDone=true;
+  var ov=document.getElementById('tap-overlay');
+  // Feedback visual inmediato
+  var txt=ov?ov.querySelector('.tov-text'):null;
+  if(txt)txt.textContent='Comenzando...';
+  // Intentar reproducir audio — reintentar hasta 6 veces
+  var _n=0;
+  function _tryPlay(){
     audio.currentTime=0;
     audio.volume=0.8;
     audio.muted=false;
-    const p=audio.play();
-    if(p!==undefined){p.catch(function(){setTimeout(function(){audio.play().catch(function(){});},80);});}
-    ov.style.transition='opacity .7s ease';
-    ov.style.opacity='0';
-    setTimeout(function(){ov.style.display='none';},750);
-    go(0);
+    var p=audio.play();
+    if(p!==undefined){p.catch(function(){if(_n++<6)setTimeout(_tryPlay,200);});}
   }
-  ov.addEventListener('touchstart',startAll,{passive:true});
-  ov.addEventListener('click',startAll);
-})();
+  _tryPlay();
+  // Iniciar slideshow siempre
+  go(0);
+  // Ocultar overlay
+  if(ov){ov.style.transition='opacity .6s';ov.style.opacity='0';setTimeout(function(){ov.style.display='none';},650);}
+}
+document.addEventListener('touchstart',_doStart,{passive:true});
+document.addEventListener('click',_doStart);
 </script>
 <div id="tap-overlay">
   <div class="tov-heart">&#9829;</div>
